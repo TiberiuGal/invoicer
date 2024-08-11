@@ -17,8 +17,7 @@
 </script>
 
 <main>
-  {#if !($currentUser)}
-  
+  {#if !($currentUser)} 
     <Login />
   {/if}
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   export let label: string;
   export let type: string = "text";
-  export let value: string;
+  export let value;
   export let name: string;
   export let className: string = "";
   export let ops = [];

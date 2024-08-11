@@ -3,22 +3,28 @@
   import { pb } from "./lib/pocketbase";
   let invoices = [];
   import { onMount } from "svelte";
-  import { faCirclePlus, faEye, faPlugCirclePlus } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faCirclePlus,
+    faEye,
+    faPlugCirclePlus,
+  } from "@fortawesome/free-solid-svg-icons";
   import Fa from "svelte-fa/src/fa.svelte";
 
   onMount(async () => {
-    const res = await pb.collection("invoices").getList();
-    invoices = res.items;
+    await loadInvoices();
   });
 
   function loadInvoices() {
     pb.collection("invoices")
-      .getList()
+      .getList(1, 10, { sort: "-num" })
       .then((res) => {
         invoices = res.items;
       });
   }
-
+  function formatDate(inDate: string): string {
+    let d = new Date(inDate);
+    return d.toLocaleDateString();
+  }
   function newInvoice() {
     pb.collection("config")
       .getList(0, 1, { filter: 'slug="invoice_config"' })
@@ -28,12 +34,18 @@
         const icId = res.items[0].id;
         let invoiceNum = String(ic.next);
         pb.collection("invoices")
-          .create({ series: ic.series, items: [], num: invoiceNum.padStart(4, "0"), currency: "RON", currencyConversionRate:1 })
+          .create({
+            series: ic.series,
+            items: [],
+            num: invoiceNum.padStart(4, "0"),
+            currency: "RON",
+            currencyConversionRate: 1,
+          })
           .then((res) => {
             let invoiceId = res.id;
             ic.next = ic.next + 1;
             pb.collection("config")
-              .update(icId, {data:ic })
+              .update(icId, { data: ic })
               .then((res) => {
                 window.location.href = "/invoices/" + invoiceId;
               });
@@ -57,7 +69,9 @@
     <div class="card-header">
       Lista Facturi
       <div class="text-end">
-        <button on:click={newInvoice} class="btn btn-primary"> <Fa icon={faCirclePlus} /> Factura Noua </button>
+        <button on:click={newInvoice} class="btn btn-primary">
+          <Fa icon={faCirclePlus} /> Factura Noua
+        </button>
       </div>
     </div>
     <div class="card-body">
@@ -75,17 +89,26 @@
         <tbody>
           {#each invoices as invoice}
             <tr id="tr-{invoice.id}">
-              <td><Link to="/invoices/{invoice.id}">{invoice.series} / {invoice.num}</Link></td>
+              <td
+                ><Link to="/invoices/{invoice.id}"
+                  >{invoice.series} / {invoice.num}</Link
+                ></td
+              >
               <td>{invoice.customerName}</td>
               <td>{invoice.total}</td>
               <td>{invoice.currency}</td>
-              <td>{invoice.date}</td>
+              <td>{formatDate(invoice.date)}</td>
               <td>
                 <div class="btn-group">
                   <Link to="/invoices/{invoice.id}"
-                    ><button class="btn btn-primary"> <Fa icon={faEye} /> View</button></Link
+                    ><button class="btn btn-primary">
+                      <Fa icon={faEye} /> View</button
+                    ></Link
                   >
-                  <button class="btn btn-sm btn-danger" on:click={() => deleteInvoice(invoice.id)}>Delete</button>
+                  <button
+                    class="btn btn-sm btn-danger"
+                    on:click={() => deleteInvoice(invoice.id)}>Delete</button
+                  >
                 </div>
               </td></tr
             >
